@@ -440,6 +440,12 @@ class TaniRepository {
         .get();
   }
 
+  Future<List<FarmerPayment>> getUnlinkedFarmerPayments(String farmerId) {
+    return (db.select(db.farmerPayments)
+          ..where((p) => p.farmerId.equals(farmerId) & p.payableId.isNull()))
+        .get();
+  }
+
   Future<List<Sale>> getSalesInDateRange(DateTime start, DateTime end) {
     return (db.select(db.sales)
           ..where((s) => s.saleDate.isBiggerOrEqualValue(start) & s.saleDate.isSmallerOrEqualValue(end)))
@@ -782,15 +788,32 @@ class TaniRepository {
           .getSingleOrNull();
 
       if (existingPayable == null) {
+        // Cek apakah ada pembayaran sebelumnya yang belum ditautkan untuk petani ini
+        final unlinkedPayments = await (db.select(db.farmerPayments)
+              ..where((p) => p.farmerId.equals(farmerId) & p.payableId.isNull()))
+            .get();
+
+        double unlinkedPaid = 0.0;
+        final payableId = _uuid.v4();
+        for (final p in unlinkedPayments) {
+          unlinkedPaid += p.amount;
+          await (db.update(db.farmerPayments)..where((item) => item.id.equals(p.id))).write(
+            FarmerPaymentsCompanion(payableId: Value(payableId)),
+          );
+        }
+
+        final remaining = netPayable - unlinkedPaid;
+        final status = remaining <= 0 ? 'LUNAS' : (unlinkedPaid > 0 ? 'DIBAYAR_SEBAGIAN' : 'BELUM_LUNAS');
+
         await db.into(db.farmerPayables).insert(
           FarmerPayablesCompanion.insert(
-            id: _uuid.v4(),
+            id: payableId,
             farmerId: farmerId,
             submissionId: submissionId,
             totalAmount: netPayable,
-            paidAmount: const Value(0.0),
-            remainingAmount: netPayable,
-            status: const Value('BELUM_LUNAS'),
+            paidAmount: Value(unlinkedPaid),
+            remainingAmount: remaining < 0 ? 0.0 : remaining,
+            status: Value(status),
             createdAt: Value(now),
             updatedAt: Value(now),
           ),
@@ -798,15 +821,160 @@ class TaniRepository {
       } else {
         final newTotal = existingPayable.totalAmount + netPayable;
         final newRemaining = newTotal - existingPayable.paidAmount;
+        final status = newRemaining <= 0 ? 'LUNAS' : (existingPayable.paidAmount > 0 ? 'DIBAYAR_SEBAGIAN' : 'BELUM_LUNAS');
         await (db.update(db.farmerPayables)..where((p) => p.id.equals(existingPayable.id))).write(
           FarmerPayablesCompanion(
             totalAmount: Value(newTotal),
-            remainingAmount: Value(newRemaining),
+            remainingAmount: Value(newRemaining < 0 ? 0.0 : newRemaining),
+            status: Value(status),
             updatedAt: Value(now),
           ),
         );
       }
+
+      // Perbarui status setoran menjadi HARGA_DITENTUKAN
+      await (db.update(db.farmerSubmissions)..where((s) => s.id.equals(submissionId))).write(
+        const FarmerSubmissionsCompanion(status: Value('HARGA_DITENTUKAN')),
+      );
     });
+  }
+
+  /// Ringkasan Harga Jual Pasar untuk Komoditas Tertentu
+  Future<Map<String, dynamic>> getMarketSalesSummaryForCommodity({
+    required String commodityId,
+    String? grade,
+  }) async {
+    var query = db.select(db.saleItems)..where((s) => s.commodityId.equals(commodityId));
+    if (grade != null && grade.isNotEmpty && grade != 'Semua' && grade != 'Campur') {
+      query = query..where((s) => s.grade.equals(grade));
+    }
+    final items = await (query..orderBy([(s) => OrderingTerm(expression: s.createdAt, mode: OrderingMode.desc)])).get();
+
+    if (items.isEmpty) {
+      return {
+        'hasSales': false,
+        'totalSoldWeight': 0.0,
+        'totalRevenue': 0.0,
+        'weightedAveragePrice': 0.0,
+        'minPrice': 0.0,
+        'maxPrice': 0.0,
+        'salesCount': 0,
+        'salesBreakdown': <Map<String, dynamic>>[],
+      };
+    }
+
+    double totalWeight = 0.0;
+    double totalRevenue = 0.0;
+    double minPrice = double.infinity;
+    double maxPrice = 0.0;
+    final breakdown = <Map<String, dynamic>>[];
+
+    for (final it in items) {
+      totalWeight += it.weight;
+      totalRevenue += it.subtotal;
+      if (it.pricePerKg < minPrice) minPrice = it.pricePerKg;
+      if (it.pricePerKg > maxPrice) maxPrice = it.pricePerKg;
+
+      final sale = await (db.select(db.sales)..where((s) => s.id.equals(it.saleId))).getSingleOrNull();
+      String buyerName = 'Pasar Induk';
+      if (sale != null) {
+        final buyer = await (db.select(db.buyers)..where((b) => b.id.equals(sale.buyerId))).getSingleOrNull();
+        if (buyer != null) buyerName = buyer.name;
+      }
+
+      breakdown.add({
+        'invoiceNumber': sale?.invoiceNumber ?? '-',
+        'date': sale?.saleDate ?? it.createdAt,
+        'buyerName': buyerName,
+        'grade': it.grade,
+        'weight': it.weight,
+        'pricePerKg': it.pricePerKg,
+        'subtotal': it.subtotal,
+      });
+    }
+
+    final avgPrice = totalWeight > 0 ? (totalRevenue / totalWeight) : 0.0;
+
+    return {
+      'hasSales': true,
+      'totalSoldWeight': totalWeight,
+      'totalRevenue': totalRevenue,
+      'weightedAveragePrice': double.parse(avgPrice.toStringAsFixed(2)),
+      'minPrice': minPrice == double.infinity ? 0.0 : minPrice,
+      'maxPrice': maxPrice,
+      'isMultiplePrices': minPrice != maxPrice && items.length > 1,
+      'salesCount': items.length,
+      'salesBreakdown': breakdown,
+    };
+  }
+
+  /// Ambil Seluruh Setoran Petani beserta Rincian Sayur & Harga Jual Pasar
+  Future<List<Map<String, dynamic>>> getFarmerSubmissionsWithDetails(String farmerId) async {
+    final submissions = await (db.select(db.farmerSubmissions)
+          ..where((s) => s.farmerId.equals(farmerId))
+          ..orderBy([(s) => OrderingTerm(expression: s.submissionDate, mode: OrderingMode.desc)]))
+        .get();
+
+    final result = <Map<String, dynamic>>[];
+
+    for (final sub in submissions) {
+      final items = await getSubmissionItems(sub.id);
+      final determinations = await (db.select(db.farmerPriceDeterminations)
+            ..where((d) => d.submissionId.equals(sub.id)))
+          .get();
+
+      final itemsWithDetails = <Map<String, dynamic>>[];
+      double subTotalHak = 0.0;
+      bool allItemsDetermined = items.isNotEmpty;
+
+      for (final it in items) {
+        final comm = await (db.select(db.commodities)..where((c) => c.id.equals(it.commodityId))).getSingleOrNull();
+        final det = determinations.where((d) => d.submissionItemId == it.id).firstOrNull;
+
+        if (det != null) {
+          subTotalHak += det.netFarmerAmount;
+        } else {
+          allItemsDetermined = false;
+        }
+
+        // Ambil hasil sortir jika ada
+        final gradings = await (db.select(db.gradingRecords)..where((g) => g.submissionItemId.equals(it.id))).get();
+        final grading = gradings.firstOrNull;
+
+        // Ambil data penjualan aktual komoditas ini di pasar
+        final marketSummary = await getMarketSalesSummaryForCommodity(
+          commodityId: it.commodityId,
+          grade: grading != null ? 'Grade A' : null,
+        );
+
+        itemsWithDetails.add({
+          'item': it,
+          'commodityName': comm?.name ?? 'Sayuran',
+          'commodityId': it.commodityId,
+          'netWeight': it.netWeight,
+          'grading': grading,
+          'isDetermined': det != null,
+          'determination': det,
+          'netFarmerAmount': det?.netFarmerAmount ?? 0.0,
+          'singlePrice': det?.singlePrice ?? 0.0,
+          'marketSummary': marketSummary,
+        });
+      }
+
+      final payable = await (db.select(db.farmerPayables)
+            ..where((p) => p.submissionId.equals(sub.id)))
+          .getSingleOrNull();
+
+      result.add({
+        'submission': sub,
+        'items': itemsWithDetails,
+        'totalHak': subTotalHak,
+        'isFullyDetermined': allItemsDetermined,
+        'payable': payable,
+      });
+    }
+
+    return result;
   }
 
   // Pembayaran Tunai Petani
