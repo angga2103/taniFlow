@@ -66,7 +66,7 @@ class _CashBookScreenState extends ConsumerState<CashBookScreen> {
                     ),
                   ),
                   loading: () => const Text('Memuat saldo...', style: TextStyle(color: Colors.white)),
-                  error: (_, __) => const Text('Rp 0', style: TextStyle(color: Colors.white)),
+                  error: (e, s) => const Text('Rp 0', style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),

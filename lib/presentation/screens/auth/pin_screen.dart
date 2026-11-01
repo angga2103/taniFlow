@@ -115,14 +115,15 @@ class _PinScreenState extends ConsumerState<PinScreen> {
               onPressed: () async {
                 final security = ref.read(pinSecurityProvider);
                 final isValid = await security.verifyRecoveryCode(textController.text.trim());
-                if (isValid && context.mounted) {
+                if (!context.mounted) return;
+                if (isValid) {
                   await security.removePin();
                   ref.read(appLockProvider.notifier).unlock();
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('PIN berhasil direset. Silakan buat PIN baru di pengaturan.')),
                   );
-                } else if (context.mounted) {
+                } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Recovery Code tidak valid.')),
                   );
@@ -288,7 +289,7 @@ class _PinScreenState extends ConsumerState<PinScreen> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors.white.withOpacity(0.08),
+          color: Colors.white.withValues(alpha: 0.08),
           border: Border.all(color: Colors.white12),
         ),
         child: Text(

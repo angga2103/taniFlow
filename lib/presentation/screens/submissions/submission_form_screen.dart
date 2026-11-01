@@ -140,6 +140,7 @@ class _SubmissionFormScreenState extends ConsumerState<SubmissionFormScreen> {
         final submissions = await repo.watchSubmissions().first;
         final savedSub = submissions.firstWhere((s) => s.transactionNumber == transactionNumber);
 
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(

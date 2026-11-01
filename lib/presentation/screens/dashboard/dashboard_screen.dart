@@ -45,7 +45,7 @@ class DashboardScreen extends ConsumerWidget {
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               loading: () => const Text(AppStrings.appName),
-              error: (_, __) => const Text(AppStrings.appName),
+              error: (e, s) => const Text(AppStrings.appName),
             ),
             Text(
               DateFormatter.formatDayDate(today),
@@ -143,7 +143,7 @@ class DashboardScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -188,7 +188,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
             loading: () => const Text('Memuat saldo...', style: TextStyle(color: Colors.white70)),
-            error: (_, __) => const Text('Rp 0', style: TextStyle(color: Colors.white)),
+            error: (e, s) => const Text('Rp 0', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
