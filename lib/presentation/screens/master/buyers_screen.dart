@@ -5,6 +5,7 @@ import '../../../core/utils/currency_formatter.dart';
 import '../../../data/database/app_database.dart';
 import '../../providers/providers.dart';
 import '../../widgets/empty_state.dart';
+import '../reports/transaction_recap_screen.dart';
 
 class BuyersScreen extends ConsumerStatefulWidget {
   const BuyersScreen({super.key});
@@ -172,6 +173,23 @@ class _BuyersScreenState extends ConsumerState<BuyersScreen> {
                 color: (summary['remainingReceivable'] as double) > 0 ? AppColors.danger : AppColors.success,
               ),
               const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TransactionRecapScreen(initialBuyerId: buyer.id, initialTabIndex: 1),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.summarize_outlined),
+                  label: const Text('Buka Rekapitulasi Transaksi Pembeli Ini'),
+                ),
+              ),
+              const SizedBox(height: 10),
             ],
           ),
         );

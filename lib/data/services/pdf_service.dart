@@ -402,4 +402,332 @@ class PdfService {
     await file.writeAsBytes(await pdf.save());
     return file;
   }
+
+  /// 4. REKAPITULASI TRANSAKSI PETANI
+  static Future<File> generateFarmerRecapPdf({
+    required String businessName,
+    String? businessAddress,
+    String? businessPhone,
+    required String farmerName,
+    String? farmerPhone,
+    required String periodTitle,
+    required List<Map<String, dynamic>> transactions,
+    required double totalWeight,
+    required double totalHak,
+    required double totalPaid,
+    required double remainingBalance,
+  }) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
+        build: (context) => [
+          _buildHeader(
+            businessName: businessName,
+            address: businessAddress,
+            phone: businessPhone,
+            documentTitle: 'REKAPITULASI TRANSAKSI PETANI',
+            transactionNumber: 'REKAP-PET-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
+            date: DateTime.now(),
+          ),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(8),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Nama Petani: $farmerName', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                    if (farmerPhone != null && farmerPhone.isNotEmpty)
+                      pw.Text('No. HP: $farmerPhone', style: const pw.TextStyle(fontSize: 9)),
+                  ],
+                ),
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: [
+                    pw.Text('Periode: $periodTitle', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                    pw.Text('Jumlah Transaksi Dipilih: ${transactions.length}', style: const pw.TextStyle(fontSize: 9)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 12),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+            children: [
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.green50),
+                children: [
+                  pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('No. Transaksi', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                  pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Tanggal', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                  pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Komoditas', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                  pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Netto', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                  pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Hak Petani', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                  pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Status', textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                ],
+              ),
+              ...transactions.map((t) {
+                return pw.TableRow(
+                  children: [
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(t['number'] as String, style: const pw.TextStyle(fontSize: 7.5))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(t['date'] as String, style: const pw.TextStyle(fontSize: 7.5))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(t['commodity'] as String, style: const pw.TextStyle(fontSize: 7.5))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(t['weight'] as String, textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 7.5))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(t['amount'] as String, textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 7.5))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(t['status'] as String, textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 7.5))),
+                  ],
+                );
+              }),
+            ],
+          ),
+          pw.SizedBox(height: 12),
+          pw.Align(
+            alignment: pw.Alignment.centerRight,
+            child: pw.Container(
+              width: 250,
+              padding: const pw.EdgeInsets.all(8),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.grey400),
+                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                color: PdfColors.grey50,
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Total Berat Bersih:', style: const pw.TextStyle(fontSize: 8.5)),
+                      pw.Text(WeightFormatter.format(totalWeight), style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                    ],
+                  ),
+                  pw.SizedBox(height: 3),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Total Hak Petani:', style: const pw.TextStyle(fontSize: 8.5)),
+                      pw.Text(CurrencyFormatter.format(totalHak), style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                    ],
+                  ),
+                  pw.SizedBox(height: 3),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Total Sudah Dibayar:', style: const pw.TextStyle(fontSize: 8.5)),
+                      pw.Text(CurrencyFormatter.format(totalPaid), style: pw.TextStyle(fontSize: 8.5, color: PdfColors.green800)),
+                    ],
+                  ),
+                  pw.Divider(thickness: 0.5),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('SISA KEWAJIBAN:', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
+                      pw.Text(CurrencyFormatter.format(remainingBalance), style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: PdfColors.red800)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          pw.SizedBox(height: 30),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Column(
+                children: [
+                  pw.Text('Pengepul / Petugas', style: const pw.TextStyle(fontSize: 9)),
+                  pw.SizedBox(height: 35),
+                  pw.Text('($businessName)', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+              pw.Column(
+                children: [
+                  pw.Text('Petani', style: const pw.TextStyle(fontSize: 9)),
+                  pw.SizedBox(height: 35),
+                  pw.Text('($farmerName)', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/Rekap_Petani_${DateTime.now().millisecondsSinceEpoch}.pdf');
+    await file.writeAsBytes(await pdf.save());
+    return file;
+  }
+
+  /// 5. REKAPITULASI TRANSAKSI PEMBELI
+  static Future<File> generateBuyerRecapPdf({
+    required String businessName,
+    String? businessAddress,
+    String? businessPhone,
+    required String buyerName,
+    String? buyerPhone,
+    required String periodTitle,
+    required List<Map<String, dynamic>> transactions,
+    required double totalWeight,
+    required double totalSalesAmount,
+    required double totalPaid,
+    required double remainingReceivable,
+  }) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(24),
+        build: (context) => [
+          _buildHeader(
+            businessName: businessName,
+            address: businessAddress,
+            phone: businessPhone,
+            documentTitle: 'REKAPITULASI TRANSAKSI PEMBELI',
+            transactionNumber: 'REKAP-BYR-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
+            date: DateTime.now(),
+          ),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(8),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Nama Pembeli: $buyerName', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                    if (buyerPhone != null && buyerPhone.isNotEmpty)
+                      pw.Text('No. HP: $buyerPhone', style: const pw.TextStyle(fontSize: 9)),
+                  ],
+                ),
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: [
+                    pw.Text('Periode: $periodTitle', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
+                    pw.Text('Jumlah Transaksi Dipilih: ${transactions.length}', style: const pw.TextStyle(fontSize: 9)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 12),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+            children: [
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.green50),
+                children: [
+                  pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('No. Nota', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                  pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Tanggal', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                  pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Rincian Muatan', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                  pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Bobot', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                  pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Total Tagihan', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                  pw.Padding(padding: const pw.EdgeInsets.all(5), child: pw.Text('Sisa Piutang', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                ],
+              ),
+              ...transactions.map((t) {
+                return pw.TableRow(
+                  children: [
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(t['number'] as String, style: const pw.TextStyle(fontSize: 7.5))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(t['date'] as String, style: const pw.TextStyle(fontSize: 7.5))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(t['commodity'] as String, style: const pw.TextStyle(fontSize: 7.5))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(t['weight'] as String, textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 7.5))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(t['amount'] as String, textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 7.5))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(4), child: pw.Text(t['remaining'] as String, textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 7.5))),
+                  ],
+                );
+              }),
+            ],
+          ),
+          pw.SizedBox(height: 12),
+          pw.Align(
+            alignment: pw.Alignment.centerRight,
+            child: pw.Container(
+              width: 250,
+              padding: const pw.EdgeInsets.all(8),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: PdfColors.grey400),
+                borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+                color: PdfColors.grey50,
+              ),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Total Berat Terjual:', style: const pw.TextStyle(fontSize: 8.5)),
+                      pw.Text(WeightFormatter.format(totalWeight), style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                    ],
+                  ),
+                  pw.SizedBox(height: 3),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Total Nilai Penjualan:', style: const pw.TextStyle(fontSize: 8.5)),
+                      pw.Text(CurrencyFormatter.format(totalSalesAmount), style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold)),
+                    ],
+                  ),
+                  pw.SizedBox(height: 3),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Total Sudah Diterima:', style: const pw.TextStyle(fontSize: 8.5)),
+                      pw.Text(CurrencyFormatter.format(totalPaid), style: pw.TextStyle(fontSize: 8.5, color: PdfColors.green800)),
+                    ],
+                  ),
+                  pw.Divider(thickness: 0.5),
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('SISA PIUTANG:', style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold)),
+                      pw.Text(CurrencyFormatter.format(remainingReceivable), style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: PdfColors.red800)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          pw.SizedBox(height: 30),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Column(
+                children: [
+                  pw.Text('Pengepul / Penjual', style: const pw.TextStyle(fontSize: 9)),
+                  pw.SizedBox(height: 35),
+                  pw.Text('($businessName)', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+              pw.Column(
+                children: [
+                  pw.Text('Pembeli / Pelanggan', style: const pw.TextStyle(fontSize: 9)),
+                  pw.SizedBox(height: 35),
+                  pw.Text('($buyerName)', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/Rekap_Pembeli_${DateTime.now().millisecondsSinceEpoch}.pdf');
+    await file.writeAsBytes(await pdf.save());
+    return file;
+  }
 }

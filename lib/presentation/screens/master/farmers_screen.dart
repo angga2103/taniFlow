@@ -6,6 +6,7 @@ import '../../../core/utils/weight_formatter.dart';
 import '../../../data/database/app_database.dart';
 import '../../providers/providers.dart';
 import '../../widgets/empty_state.dart';
+import '../reports/transaction_recap_screen.dart';
 
 class FarmersScreen extends ConsumerStatefulWidget {
   const FarmersScreen({super.key});
@@ -185,6 +186,23 @@ class _FarmersScreenState extends ConsumerState<FarmersScreen> {
                 ],
               ),
               const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TransactionRecapScreen(initialFarmerId: farmer.id, initialTabIndex: 0),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.summarize_outlined),
+                  label: const Text('Buka Rekapitulasi Transaksi Petani Ini'),
+                ),
+              ),
+              const SizedBox(height: 10),
             ],
           ),
         );

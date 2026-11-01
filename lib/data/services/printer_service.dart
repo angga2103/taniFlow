@@ -327,4 +327,110 @@ class ThermalPrinterService {
 
     return await _sendBytes(bytes);
   }
+
+  /// 4. PRINT REKAPITULASI PETANI
+  Future<bool> printFarmerRecapReceipt({
+    required String businessName,
+    required String farmerName,
+    required String periodTitle,
+    required int totalTransactions,
+    required double totalWeight,
+    required double totalHak,
+    required double totalPaid,
+    required double remainingBalance,
+  }) async {
+    final generator = await _getGenerator();
+    final bytes = <int>[];
+
+    bytes.addAll(generator.text(
+      businessName,
+      styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size1, width: PosTextSize.size1),
+    ));
+    bytes.addAll(generator.text('REKAP TRANSAKSI PETANI', styles: const PosStyles(align: PosAlign.center, bold: true)));
+    bytes.addAll(generator.text('Petani: $farmerName', styles: const PosStyles(bold: true)));
+    bytes.addAll(generator.text('Periode: $periodTitle'));
+    bytes.addAll(generator.text('Dipilih: $totalTransactions transaksi'));
+    bytes.addAll(generator.text('Tgl Cetak: ${DateFormatter.formatDateTime(DateTime.now())}'));
+    bytes.addAll(generator.hr());
+
+    bytes.addAll(generator.row([
+      PosColumn(text: 'Total Berat:', width: 6),
+      PosColumn(text: WeightFormatter.format(totalWeight), width: 6, styles: const PosStyles(align: PosAlign.right, bold: true)),
+    ]));
+
+    bytes.addAll(generator.row([
+      PosColumn(text: 'Total Hak Petani:', width: 6),
+      PosColumn(text: CurrencyFormatter.format(totalHak), width: 6, styles: const PosStyles(align: PosAlign.right, bold: true)),
+    ]));
+
+    bytes.addAll(generator.row([
+      PosColumn(text: 'Sudah Dibayar:', width: 6),
+      PosColumn(text: CurrencyFormatter.format(totalPaid), width: 6, styles: const PosStyles(align: PosAlign.right)),
+    ]));
+
+    bytes.addAll(generator.hr());
+
+    bytes.addAll(generator.row([
+      PosColumn(text: 'SISA HUTANG:', width: 6, styles: const PosStyles(bold: true)),
+      PosColumn(text: CurrencyFormatter.format(remainingBalance), width: 6, styles: const PosStyles(align: PosAlign.right, bold: true)),
+    ]));
+
+    bytes.addAll(generator.feed(2));
+    bytes.addAll(generator.cut());
+
+    return await _sendBytes(bytes);
+  }
+
+  /// 5. PRINT REKAPITULASI PEMBELI
+  Future<bool> printBuyerRecapReceipt({
+    required String businessName,
+    required String buyerName,
+    required String periodTitle,
+    required int totalTransactions,
+    required double totalWeight,
+    required double totalSalesAmount,
+    required double totalPaid,
+    required double remainingReceivable,
+  }) async {
+    final generator = await _getGenerator();
+    final bytes = <int>[];
+
+    bytes.addAll(generator.text(
+      businessName,
+      styles: const PosStyles(align: PosAlign.center, bold: true, height: PosTextSize.size1, width: PosTextSize.size1),
+    ));
+    bytes.addAll(generator.text('REKAP TRANSAKSI PEMBELI', styles: const PosStyles(align: PosAlign.center, bold: true)));
+    bytes.addAll(generator.text('Pembeli: $buyerName', styles: const PosStyles(bold: true)));
+    bytes.addAll(generator.text('Periode: $periodTitle'));
+    bytes.addAll(generator.text('Dipilih: $totalTransactions transaksi'));
+    bytes.addAll(generator.text('Tgl Cetak: ${DateFormatter.formatDateTime(DateTime.now())}'));
+    bytes.addAll(generator.hr());
+
+    bytes.addAll(generator.row([
+      PosColumn(text: 'Total Terjual:', width: 6),
+      PosColumn(text: WeightFormatter.format(totalWeight), width: 6, styles: const PosStyles(align: PosAlign.right, bold: true)),
+    ]));
+
+    bytes.addAll(generator.row([
+      PosColumn(text: 'Total Tagihan:', width: 6),
+      PosColumn(text: CurrencyFormatter.format(totalSalesAmount), width: 6, styles: const PosStyles(align: PosAlign.right, bold: true)),
+    ]));
+
+    bytes.addAll(generator.row([
+      PosColumn(text: 'Sudah Diterima:', width: 6),
+      PosColumn(text: CurrencyFormatter.format(totalPaid), width: 6, styles: const PosStyles(align: PosAlign.right)),
+    ]));
+
+    bytes.addAll(generator.hr());
+
+    bytes.addAll(generator.row([
+      PosColumn(text: 'SISA PIUTANG:', width: 6, styles: const PosStyles(bold: true)),
+      PosColumn(text: CurrencyFormatter.format(remainingReceivable), width: 6, styles: const PosStyles(align: PosAlign.right, bold: true)),
+    ]));
+
+    bytes.addAll(generator.feed(2));
+    bytes.addAll(generator.cut());
+
+    return await _sendBytes(bytes);
+  }
 }

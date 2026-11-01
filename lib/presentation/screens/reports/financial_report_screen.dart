@@ -8,6 +8,7 @@ import '../../../core/utils/date_formatter.dart';
 import '../../../data/services/excel_service.dart';
 import '../../../data/services/share_service.dart';
 import '../../providers/providers.dart';
+import 'transaction_recap_screen.dart';
 
 enum ReportPeriod { daily, weekly, monthly, yearly, custom }
 
@@ -135,6 +136,14 @@ class _FinancialReportScreenState extends ConsumerState<FinancialReportScreen> {
         title: const Text('Laporan Keuangan & Laba'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.summarize_outlined),
+            tooltip: 'Rekap Transaksi Petani & Pembeli',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TransactionRecapScreen()),
+            ),
+          ),
+          IconButton(
             icon: const Icon(Icons.table_chart_outlined),
             tooltip: 'Export Excel (XLSX)',
             onPressed: _exportToExcel,
@@ -200,6 +209,30 @@ class _FinancialReportScreenState extends ConsumerState<FinancialReportScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Banner Rekapitulasi Transaksi Petani & Pembeli
+                          Card(
+                            elevation: 0,
+                            color: AppColors.primaryLighter,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: const BorderSide(color: AppColors.primaryLight),
+                            ),
+                            child: ListTile(
+                              leading: const CircleAvatar(
+                                backgroundColor: AppColors.primary,
+                                child: Icon(Icons.summarize_outlined, color: Colors.white, size: 20),
+                              ),
+                              title: const Text('Rekapitulasi Transaksi Petani & Pembeli', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              subtitle: const Text('Pilih riwayat transaksi, hitung sisa hutang/piutang, cetak struk & PDF', style: TextStyle(fontSize: 11)),
+                              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const TransactionRecapScreen()),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
                           // 1. Highlight Card Laba Bersih
                           _buildNetProfitHighlightCard(_result!),
                           const SizedBox(height: 16),

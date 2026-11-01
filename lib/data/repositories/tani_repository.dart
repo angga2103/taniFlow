@@ -269,21 +269,9 @@ class TaniRepository {
         totalGross += gross;
         totalTare += tare;
         totalNet += net;
-
-        await db.into(db.submissionItems).insert(
-          SubmissionItemsCompanion.insert(
-            id: _uuid.v4(),
-            submissionId: submissionId,
-            commodityId: it['commodityId'] as String,
-            grossWeight: gross,
-            tareWeight: tare,
-            netWeight: net,
-            status: const Value('MENUNGGU_SORTIR'),
-            createdAt: Value(now),
-          ),
-        );
       }
 
+      // 1. Catat Induk FarmerSubmissions terlebih dahulu untuk integritas referensi ForeignKey
       await db.into(db.farmerSubmissions).insert(
         FarmerSubmissionsCompanion.insert(
           id: submissionId,
@@ -299,6 +287,26 @@ class TaniRepository {
           updatedAt: Value(now),
         ),
       );
+
+      // 2. Catat Rincian Anak SubmissionItems
+      for (final it in items) {
+        final gross = (it['grossWeight'] as num).toDouble();
+        final tare = (it['tareWeight'] as num).toDouble();
+        final net = BusinessCalculator.calculateNetWeight(gross, tare);
+
+        await db.into(db.submissionItems).insert(
+          SubmissionItemsCompanion.insert(
+            id: _uuid.v4(),
+            submissionId: submissionId,
+            commodityId: it['commodityId'] as String,
+            grossWeight: gross,
+            tareWeight: tare,
+            netWeight: net,
+            status: const Value('MENUNGGU_SORTIR'),
+            createdAt: Value(now),
+          ),
+        );
+      }
 
       // Audit Log
       await db.into(db.auditLogs).insert(
@@ -458,11 +466,31 @@ class TaniRepository {
       final now = DateTime.now();
 
       double totalShipmentWeight = 0.0;
-
       for (final it in items) {
         final weight = (it['totalWeight'] as num).toDouble();
         totalShipmentWeight += weight;
+      }
 
+      // 1. Catat Induk Shipments terlebih dahulu agar integritas ForeignKey shipmentItems terpenuhi
+      await db.into(db.shipments).insert(
+        ShipmentsCompanion.insert(
+          id: shipmentId,
+          shipmentNumber: shipmentNumber,
+          shipmentDate: Value(now),
+          destinationMarket: Value(destinationMarket),
+          driverName: Value(driverName),
+          vehicleNumber: Value(vehicleNumber),
+          notes: Value(notes),
+          status: const Value('SIAP_KIRIM'),
+          totalWeight: Value(totalShipmentWeight),
+          createdAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
+
+      // 2. Catat Rincian Anak ShipmentItems dan Alokasi
+      for (final it in items) {
+        final weight = (it['totalWeight'] as num).toDouble();
         final shipmentItemId = _uuid.v4();
         await db.into(db.shipmentItems).insert(
           ShipmentItemsCompanion.insert(
@@ -494,22 +522,6 @@ class TaniRepository {
         }
       }
 
-      await db.into(db.shipments).insert(
-        ShipmentsCompanion.insert(
-          id: shipmentId,
-          shipmentNumber: shipmentNumber,
-          shipmentDate: Value(now),
-          destinationMarket: Value(destinationMarket),
-          driverName: Value(driverName),
-          vehicleNumber: Value(vehicleNumber),
-          notes: Value(notes),
-          status: const Value('SIAP_KIRIM'),
-          totalWeight: Value(totalShipmentWeight),
-          createdAt: Value(now),
-          updatedAt: Value(now),
-        ),
-      );
-
       return shipmentNumber;
     });
   }
@@ -521,6 +533,45 @@ class TaniRepository {
     return (db.select(db.sales)
           ..orderBy([(s) => OrderingTerm(expression: s.saleDate, mode: OrderingMode.desc)]))
         .watch();
+  }
+
+  Future<List<SaleItem>> getSaleItems(String saleId) {
+    return (db.select(db.saleItems)..where((i) => i.saleId.equals(saleId))).get();
+  }
+
+  Future<List<FarmerSubmission>> getFarmerSubmissions(String farmerId) {
+    return (db.select(db.farmerSubmissions)
+          ..where((s) => s.farmerId.equals(farmerId))
+          ..orderBy([(s) => OrderingTerm(expression: s.submissionDate, mode: OrderingMode.desc)]))
+        .get();
+  }
+
+  Future<List<FarmerPayment>> getFarmerPayments(String farmerId) {
+    return (db.select(db.farmerPayments)
+          ..where((p) => p.farmerId.equals(farmerId))
+          ..orderBy([(p) => OrderingTerm(expression: p.paymentDate, mode: OrderingMode.desc)]))
+        .get();
+  }
+
+  Future<List<FarmerPriceDetermination>> getFarmerPriceDeterminations(String farmerId) {
+    return (db.select(db.farmerPriceDeterminations)
+          ..where((p) => p.farmerId.equals(farmerId))
+          ..orderBy([(p) => OrderingTerm(expression: p.determinedAt, mode: OrderingMode.desc)]))
+        .get();
+  }
+
+  Future<List<Sale>> getBuyerSales(String buyerId) {
+    return (db.select(db.sales)
+          ..where((s) => s.buyerId.equals(buyerId))
+          ..orderBy([(s) => OrderingTerm(expression: s.saleDate, mode: OrderingMode.desc)]))
+        .get();
+  }
+
+  Future<List<BuyerPayment>> getBuyerPayments(String buyerId) {
+    return (db.select(db.buyerPayments)
+          ..where((p) => p.buyerId.equals(buyerId))
+          ..orderBy([(p) => OrderingTerm(expression: p.paymentDate, mode: OrderingMode.desc)]))
+        .get();
   }
 
   Future<String> recordSale({
@@ -538,12 +589,38 @@ class TaniRepository {
       final now = DateTime.now();
 
       double totalAmount = 0.0;
+      for (final it in items) {
+        final weight = (it['weight'] as num).toDouble();
+        final price = (it['pricePerKg'] as num).toDouble();
+        totalAmount += (weight * price);
+      }
 
+      final remainingReceivable = BusinessCalculator.calculateRemainingBalance(totalAmount, paidAmount);
+      final saleStatus = remainingReceivable <= 0 ? 'LUNAS' : 'BELUM_LUNAS';
+
+      // 1. Catat Induk Sales terlebih dahulu untuk integritas referensi ForeignKey saleItems
+      await db.into(db.sales).insert(
+        SalesCompanion.insert(
+          id: saleId,
+          invoiceNumber: invoiceNumber,
+          shipmentId: shipmentId,
+          buyerId: buyerId,
+          saleDate: Value(now),
+          totalAmount: totalAmount,
+          paidAmount: Value(paidAmount),
+          remainingAmount: remainingReceivable,
+          paymentType: Value(paymentType),
+          status: Value(saleStatus),
+          notes: Value(notes),
+          createdAt: Value(now),
+        ),
+      );
+
+      // 2. Catat Rincian Anak SaleItems & Alokasi
       for (final it in items) {
         final weight = (it['weight'] as num).toDouble();
         final price = (it['pricePerKg'] as num).toDouble();
         final subtotal = weight * price;
-        totalAmount += subtotal;
 
         final saleItemId = _uuid.v4();
         await db.into(db.saleItems).insert(
@@ -602,26 +679,6 @@ class TaniRepository {
           );
         }
       }
-
-      final remainingReceivable = BusinessCalculator.calculateRemainingBalance(totalAmount, paidAmount);
-      final saleStatus = remainingReceivable <= 0 ? 'LUNAS' : 'BELUM_LUNAS';
-
-      await db.into(db.sales).insert(
-        SalesCompanion.insert(
-          id: saleId,
-          invoiceNumber: invoiceNumber,
-          shipmentId: shipmentId,
-          buyerId: buyerId,
-          saleDate: Value(now),
-          totalAmount: totalAmount,
-          paidAmount: Value(paidAmount),
-          remainingAmount: remainingReceivable,
-          paymentType: Value(paymentType),
-          status: Value(saleStatus),
-          notes: Value(notes),
-          createdAt: Value(now),
-        ),
-      );
 
       // Jika ada uang tunai dibayarkan saat penjualan -> Masuk Buku Kas
       if (paidAmount > 0) {

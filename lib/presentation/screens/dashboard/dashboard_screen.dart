@@ -19,6 +19,7 @@ import '../finance/expense_form_screen.dart';
 import '../finance/daily_cash_closing_screen.dart';
 import '../printer/printer_settings_screen.dart';
 import '../backup/backup_screen.dart';
+import '../reports/transaction_recap_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -244,6 +245,12 @@ class DashboardScreen extends ConsumerWidget {
         'icon': Icons.lock_clock,
         'color': Colors.teal,
         'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DailyCashClosingScreen())),
+      },
+      {
+        'label': 'Rekap Transaksi',
+        'icon': Icons.summarize_outlined,
+        'color': Colors.deepOrange,
+        'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TransactionRecapScreen())),
       },
     ];
 

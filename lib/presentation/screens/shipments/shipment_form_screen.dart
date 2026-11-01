@@ -71,6 +71,78 @@ class _ShipmentFormScreenState extends ConsumerState<ShipmentFormScreen> {
     });
   }
 
+  Future<void> _showQuickAddCommodityDialog() async {
+    final nameCtrl = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.eco, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Tambah Jenis Sayur', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Nama Sayuran / Komoditas *',
+                hintText: 'Contoh: Buncis, Kol, Tomat',
+                prefixIcon: Icon(Icons.eco_outlined),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final name = nameCtrl.text.trim();
+              if (name.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Nama sayuran wajib diisi.')),
+                );
+                return;
+              }
+              Navigator.pop(dialogCtx);
+              try {
+                final repo = ref.read(repositoryProvider);
+                final newId = await repo.addCommodity(name: name);
+                ref.invalidate(commoditiesProvider);
+                setState(() {
+                  _selectedCommodityId = newId;
+                });
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Sayuran "$name" berhasil ditambahkan dan dipilih!'),
+                      backgroundColor: AppColors.primary,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal menyimpan sayuran: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _saveShipment() async {
     if (_destinationController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -184,11 +256,21 @@ class _ShipmentFormScreenState extends ConsumerState<ShipmentFormScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '2. Muatan Sayur yang Dikirim',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '2. Muatan Sayur yang Dikirim',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
+                      ),
+                      TextButton.icon(
+                        onPressed: _showQuickAddCommodityDialog,
+                        icon: const Icon(Icons.add_circle_outline, size: 16),
+                        label: const Text('+ Sayuran Baru', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 6),
                   commoditiesAsync.when(
                     data: (commodities) {
                       return DropdownButtonFormField<String>(

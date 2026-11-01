@@ -146,6 +146,106 @@ class _SalesFormScreenState extends ConsumerState<SalesFormScreen> {
     });
   }
 
+  Future<void> _showQuickAddBuyerDialog() async {
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    final addressCtrl = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.person_add, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Tambah Pembeli Cepat', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Nama Pembeli / Lapak *',
+                  hintText: 'Contoh: Kios Berkah / Pak Haji Kramat',
+                  prefixIcon: Icon(Icons.storefront_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Nomor Telepon (Opsional)',
+                  hintText: '0812xxxx',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: addressCtrl,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Alamat / Pasar (Opsional)',
+                  hintText: 'Contoh: Blok B Pasar Kramat Jati',
+                  prefixIcon: Icon(Icons.location_on_outlined),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final name = nameCtrl.text.trim();
+              if (name.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Nama pembeli wajib diisi.')),
+                );
+                return;
+              }
+              Navigator.pop(dialogCtx);
+              try {
+                final repo = ref.read(repositoryProvider);
+                final newId = await repo.addBuyer(
+                  name: name,
+                  phone: phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim(),
+                  address: addressCtrl.text.trim().isEmpty ? null : addressCtrl.text.trim(),
+                );
+                ref.invalidate(activeBuyersProvider);
+                setState(() {
+                  _selectedBuyerId = newId;
+                });
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Pembeli "$name" berhasil disimpan dan dipilih!'),
+                      backgroundColor: AppColors.primary,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal menyimpan pembeli: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _saveSale() async {
     if (_selectedShipmentId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -252,7 +352,22 @@ class _SalesFormScreenState extends ConsumerState<SalesFormScreen> {
               loading: () => const LinearProgressIndicator(),
               error: (err, _) => Text('Gagal: $err'),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Pembeli / Pelanggan',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
+                TextButton.icon(
+                  onPressed: _showQuickAddBuyerDialog,
+                  icon: const Icon(Icons.person_add, size: 16),
+                  label: const Text('+ Pembeli Baru', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
             buyersAsync.when(
               data: (buyers) {
                 return DropdownButtonFormField<String>(

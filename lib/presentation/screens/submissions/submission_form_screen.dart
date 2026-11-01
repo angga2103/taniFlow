@@ -50,6 +50,180 @@ class _SubmissionFormScreenState extends ConsumerState<SubmissionFormScreen> {
     });
   }
 
+  Future<void> _showQuickAddFarmerDialog() async {
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    final addressCtrl = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.person_add, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Tambah Petani Cepat', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Nama Petani *',
+                  hintText: 'Contoh: Pak Slamet',
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Nomor Telepon (Opsional)',
+                  hintText: '0812xxxx',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: addressCtrl,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Alamat / Desa (Opsional)',
+                  hintText: 'Contoh: Desa Cikajang',
+                  prefixIcon: Icon(Icons.location_on_outlined),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final name = nameCtrl.text.trim();
+              if (name.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Nama petani wajib diisi.')),
+                );
+                return;
+              }
+              Navigator.pop(dialogCtx);
+              try {
+                final repo = ref.read(repositoryProvider);
+                final newId = await repo.addFarmer(
+                  name: name,
+                  phone: phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim(),
+                  address: addressCtrl.text.trim().isEmpty ? null : addressCtrl.text.trim(),
+                );
+                ref.invalidate(activeFarmersProvider);
+                setState(() {
+                  _selectedFarmerId = newId;
+                });
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Petani "$name" berhasil disimpan dan dipilih!'),
+                      backgroundColor: AppColors.primary,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal menyimpan petani: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showQuickAddCommodityDialog() async {
+    final nameCtrl = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.eco, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Tambah Jenis Sayur Cepat', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Nama Sayuran / Komoditas *',
+                hintText: 'Contoh: Buncis, Kol, Tomat',
+                prefixIcon: Icon(Icons.eco_outlined),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final name = nameCtrl.text.trim();
+              if (name.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Nama sayuran wajib diisi.')),
+                );
+                return;
+              }
+              Navigator.pop(dialogCtx);
+              try {
+                final repo = ref.read(repositoryProvider);
+                final newId = await repo.addCommodity(
+                  name: name,
+                );
+                ref.invalidate(commoditiesProvider);
+                setState(() {
+                  _currentCommodityId = newId;
+                });
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Sayuran "$name" berhasil disimpan dan dipilih!'),
+                      backgroundColor: AppColors.primary,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal menyimpan sayuran: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _addItem() {
     if (_currentCommodityId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -177,11 +351,21 @@ class _SubmissionFormScreenState extends ConsumerState<SubmissionFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Pilih Petani
-            const Text(
-              '1. Identitas Petani Penyetor',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '1. Identitas Petani Penyetor',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                ),
+                TextButton.icon(
+                  onPressed: _showQuickAddFarmerDialog,
+                  icon: const Icon(Icons.person_add, size: 16),
+                  label: const Text('+ Petani Baru', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             farmersAsync.when(
               data: (farmers) {
                 return DropdownButtonFormField<String>(
@@ -219,11 +403,21 @@ class _SubmissionFormScreenState extends ConsumerState<SubmissionFormScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '2. Form Timbangan (Input Cepat)',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '2. Form Timbangan (Input Cepat)',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
+                      ),
+                      TextButton.icon(
+                        onPressed: _showQuickAddCommodityDialog,
+                        icon: const Icon(Icons.add_circle_outline, size: 16),
+                        label: const Text('+ Sayuran Baru', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   commoditiesAsync.when(
                     data: (commodities) {
                       return DropdownButtonFormField<String>(

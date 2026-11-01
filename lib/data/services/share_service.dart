@@ -22,6 +22,11 @@ class ShareService {
     );
   }
 
+  /// Share general text message via Android Native Share Sheet
+  static Future<void> shareText(String text, {String? subject}) async {
+    await Share.share(text, subject: subject);
+  }
+
   /// Format & Share Bukti Setoran ke WhatsApp / Media Sosial
   static Future<void> shareSubmissionText({
     required String businessName,
