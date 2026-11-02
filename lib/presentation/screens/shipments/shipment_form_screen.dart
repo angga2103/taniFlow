@@ -275,6 +275,7 @@ class _ShipmentFormScreenState extends ConsumerState<ShipmentFormScreen> {
                     data: (commodities) {
                       return DropdownButtonFormField<String>(
                         value: _selectedCommodityId,
+                        isExpanded: true,
                         decoration: const InputDecoration(
                           labelText: 'Pilih Komoditas',
                           prefixIcon: Icon(Icons.eco),
@@ -282,7 +283,7 @@ class _ShipmentFormScreenState extends ConsumerState<ShipmentFormScreen> {
                         items: commodities.map((c) {
                           return DropdownMenuItem<String>(
                             value: c.id,
-                            child: Text(c.name),
+                            child: Text(c.name, overflow: TextOverflow.ellipsis, maxLines: 1),
                           );
                         }).toList(),
                         onChanged: (val) {
@@ -301,15 +302,16 @@ class _ShipmentFormScreenState extends ConsumerState<ShipmentFormScreen> {
                       Expanded(
                         child: DropdownButtonFormField<String>(
                           value: _selectedGrade,
+                          isExpanded: true,
                           decoration: const InputDecoration(
                             labelText: 'Grade / Mutu',
                             prefixIcon: Icon(Icons.grade),
                           ),
                           items: const [
-                            DropdownMenuItem(value: 'Grade A', child: Text('Grade A (Super)')),
-                            DropdownMenuItem(value: 'Grade B', child: Text('Grade B (Sedang)')),
-                            DropdownMenuItem(value: 'Grade C', child: Text('Grade C (Kecil)')),
-                            DropdownMenuItem(value: 'Campur', child: Text('Harga Tunggal / Campur')),
+                            DropdownMenuItem(value: 'Grade A', child: Text('Grade A (Super)', overflow: TextOverflow.ellipsis, maxLines: 1)),
+                            DropdownMenuItem(value: 'Grade B', child: Text('Grade B (Sedang)', overflow: TextOverflow.ellipsis, maxLines: 1)),
+                            DropdownMenuItem(value: 'Grade C', child: Text('Grade C (Kecil)', overflow: TextOverflow.ellipsis, maxLines: 1)),
+                            DropdownMenuItem(value: 'Campur', child: Text('Harga Tunggal / Campur', overflow: TextOverflow.ellipsis, maxLines: 1)),
                           ],
                           onChanged: (val) {
                             if (val != null) setState(() => _selectedGrade = val);

@@ -336,6 +336,7 @@ class _SalesFormScreenState extends ConsumerState<SalesFormScreen> {
               data: (shipments) {
                 return DropdownButtonFormField<String>(
                   value: _selectedShipmentId,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Pengiriman Pasar Asal',
                     prefixIcon: Icon(Icons.local_shipping_outlined),
@@ -343,7 +344,11 @@ class _SalesFormScreenState extends ConsumerState<SalesFormScreen> {
                   items: shipments.map((s) {
                     return DropdownMenuItem<String>(
                       value: s.id,
-                      child: Text('${s.shipmentNumber} - ${s.destinationMarket ?? "Pasar"} (${WeightFormatter.format(s.totalWeight)})'),
+                      child: Text(
+                        '${s.shipmentNumber} - ${s.destinationMarket ?? "Pasar"} (${WeightFormatter.format(s.totalWeight)})',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     );
                   }).toList(),
                   onChanged: _onShipmentSelected,
@@ -372,6 +377,7 @@ class _SalesFormScreenState extends ConsumerState<SalesFormScreen> {
               data: (buyers) {
                 return DropdownButtonFormField<String>(
                   value: _selectedBuyerId,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Pilih Pembeli / Pelanggan',
                     prefixIcon: Icon(Icons.storefront_outlined),
@@ -379,7 +385,11 @@ class _SalesFormScreenState extends ConsumerState<SalesFormScreen> {
                   items: buyers.map((b) {
                     return DropdownMenuItem<String>(
                       value: b.id,
-                      child: Text('${b.name} ${b.phone != null ? "(${b.phone})" : ""}'),
+                      child: Text(
+                        '${b.name} ${b.phone != null ? "(${b.phone})" : ""}',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -413,6 +423,7 @@ class _SalesFormScreenState extends ConsumerState<SalesFormScreen> {
                     const SizedBox(height: 10),
                     DropdownButtonFormField<ShipmentItem>(
                       value: _selectedShipmentItem,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Pilih Muatan Sayur Pengiriman',
                         prefixIcon: Icon(Icons.inventory_2_outlined),
@@ -421,7 +432,11 @@ class _SalesFormScreenState extends ConsumerState<SalesFormScreen> {
                         final name = commMap[item.commodityId] ?? 'Komoditas';
                         return DropdownMenuItem<ShipmentItem>(
                           value: item,
-                          child: Text('$name (${item.grade}) - Sisa: ${WeightFormatter.format(item.remainingWeight)}'),
+                          child: Text(
+                            '$name (${item.grade}) - Sisa: ${WeightFormatter.format(item.remainingWeight)}',
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
                         );
                       }).toList(),
                       onChanged: (val) {

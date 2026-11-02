@@ -288,6 +288,7 @@ class _FarmerPaymentScreenState extends ConsumerState<FarmerPaymentScreen> {
               data: (farmers) {
                 return DropdownButtonFormField<String>(
                   value: _selectedFarmerId,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Pilih Petani',
                     prefixIcon: Icon(Icons.person),
@@ -295,7 +296,11 @@ class _FarmerPaymentScreenState extends ConsumerState<FarmerPaymentScreen> {
                   items: farmers.map((f) {
                     return DropdownMenuItem<String>(
                       value: f.id,
-                      child: Text('${f.name} ${f.address != null ? "(${f.address})" : ""}'),
+                      child: Text(
+                        '${f.name} ${f.address != null ? "(${f.address})" : ""}',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     );
                   }).toList(),
                   onChanged: _onFarmerSelected,

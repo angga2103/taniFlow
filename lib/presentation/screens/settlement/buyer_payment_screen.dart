@@ -121,6 +121,7 @@ class _BuyerPaymentScreenState extends ConsumerState<BuyerPaymentScreen> {
               data: (buyers) {
                 return DropdownButtonFormField<String>(
                   value: _selectedBuyerId,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Pilih Pembeli / Pelanggan',
                     prefixIcon: Icon(Icons.storefront),
@@ -128,7 +129,11 @@ class _BuyerPaymentScreenState extends ConsumerState<BuyerPaymentScreen> {
                   items: buyers.map((b) {
                     return DropdownMenuItem<String>(
                       value: b.id,
-                      child: Text(b.name),
+                      child: Text(
+                        '${b.name}${b.address != null ? " (${b.address})" : ""}',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     );
                   }).toList(),
                   onChanged: _onBuyerSelected,
@@ -165,6 +170,7 @@ class _BuyerPaymentScreenState extends ConsumerState<BuyerPaymentScreen> {
               else ...[
                 DropdownButtonFormField<BuyerReceivable>(
                   value: _selectedReceivable,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Pilih Tagihan Piutang',
                     prefixIcon: Icon(Icons.receipt),
@@ -172,7 +178,11 @@ class _BuyerPaymentScreenState extends ConsumerState<BuyerPaymentScreen> {
                   items: _unpaidReceivables.map((r) {
                     return DropdownMenuItem<BuyerReceivable>(
                       value: r,
-                      child: Text('Piutang Sisa: ${CurrencyFormatter.format(r.remainingAmount)}'),
+                      child: Text(
+                        'Piutang Sisa: ${CurrencyFormatter.format(r.remainingAmount)}',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {

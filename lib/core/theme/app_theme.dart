@@ -20,18 +20,51 @@ class AppTheme {
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
+        iconTheme: IconThemeData(color: Colors.white),
+        actionsIconTheme: IconThemeData(color: Colors.white),
         titleTextStyle: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
       ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.white.withValues(alpha: 0.72),
+        indicatorColor: Colors.white,
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelStyle: const TextStyle(
+          fontSize: 13.5,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w500,
+          color: Colors.white.withValues(alpha: 0.72),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: const Color(0xFFF1F5F9),
+        disabledColor: const Color(0xFFE2E8F0),
+        selectedColor: AppColors.primary,
+        secondarySelectedColor: AppColors.primary,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        labelStyle: const TextStyle(fontSize: 12, color: Color(0xFF334155)),
+        secondaryLabelStyle: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+        brightness: Brightness.light,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+      ),
       cardTheme: CardThemeData(
         color: AppColors.cardBg,
-        elevation: 1,
+        elevation: 0.5,
+        shadowColor: Colors.black.withValues(alpha: 0.04),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.border, width: 0.8),
+          side: const BorderSide(color: AppColors.border, width: 0.9),
         ),
         margin: EdgeInsets.zero,
       ),
@@ -70,7 +103,7 @@ class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -84,8 +117,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.danger),
         ),
-        labelStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+        labelStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 13.5),
+        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13.5),
       ),
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,

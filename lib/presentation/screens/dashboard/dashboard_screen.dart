@@ -37,6 +37,17 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 14, top: 10, bottom: 10, right: 2),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              'assets/images/app_logo.png',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const Icon(Icons.eco, color: Colors.white),
+            ),
+          ),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

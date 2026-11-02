@@ -370,6 +370,7 @@ class _SubmissionFormScreenState extends ConsumerState<SubmissionFormScreen> {
               data: (farmers) {
                 return DropdownButtonFormField<String>(
                   value: _selectedFarmerId,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Pilih Petani',
                     prefixIcon: Icon(Icons.person),
@@ -377,7 +378,11 @@ class _SubmissionFormScreenState extends ConsumerState<SubmissionFormScreen> {
                   items: farmers.map((f) {
                     return DropdownMenuItem<String>(
                       value: f.id,
-                      child: Text('${f.name} ${f.address != null ? "(${f.address})" : ""}'),
+                      child: Text(
+                        '${f.name} ${f.address != null ? "(${f.address})" : ""}',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -422,6 +427,7 @@ class _SubmissionFormScreenState extends ConsumerState<SubmissionFormScreen> {
                     data: (commodities) {
                       return DropdownButtonFormField<String>(
                         value: _currentCommodityId,
+                        isExpanded: true,
                         decoration: const InputDecoration(
                           labelText: 'Pilih Komoditas Sayur',
                           prefixIcon: Icon(Icons.eco),
@@ -429,7 +435,11 @@ class _SubmissionFormScreenState extends ConsumerState<SubmissionFormScreen> {
                         items: commodities.map((c) {
                           return DropdownMenuItem<String>(
                             value: c.id,
-                            child: Text(c.name),
+                            child: Text(
+                              c.name,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                           );
                         }).toList(),
                         onChanged: (val) {

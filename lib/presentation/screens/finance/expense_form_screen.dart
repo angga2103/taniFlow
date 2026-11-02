@@ -110,6 +110,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
             const SizedBox(height: 14),
             DropdownButtonFormField<String>(
               value: _category,
+              isExpanded: true,
               decoration: const InputDecoration(
                 labelText: 'Kategori Pengeluaran',
                 prefixIcon: Icon(Icons.category_outlined),
@@ -117,7 +118,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
               items: _categories.map((c) {
                 return DropdownMenuItem<String>(
                   value: c,
-                  child: Text(c),
+                  child: Text(c, overflow: TextOverflow.ellipsis, maxLines: 1),
                 );
               }).toList(),
               onChanged: (val) {

@@ -17,12 +17,33 @@ class AboutScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 20),
             Container(
-              padding: const EdgeInsets.all(20),
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
-                color: AppColors.primaryLighter,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.eco, size: 56, color: AppColors.primary),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(22),
+                child: Image.asset(
+                  'assets/images/app_logo.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: const BoxDecoration(
+                      color: AppColors.primaryLighter,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.eco, size: 56, color: AppColors.primary),
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             const Text(

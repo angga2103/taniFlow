@@ -177,6 +177,7 @@ class _FarmerPricingScreenState extends ConsumerState<FarmerPricingScreen> {
               data: (submissions) {
                 return DropdownButtonFormField<FarmerSubmission>(
                   value: _selectedSubmission,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Pilih Transaksi Setoran',
                     prefixIcon: Icon(Icons.receipt_outlined),
@@ -185,7 +186,11 @@ class _FarmerPricingScreenState extends ConsumerState<FarmerPricingScreen> {
                     final farmerName = farmerMap[s.farmerId] ?? 'Petani';
                     return DropdownMenuItem<FarmerSubmission>(
                       value: s,
-                      child: Text('${s.transactionNumber} - $farmerName (${WeightFormatter.format(s.totalNetWeight)})'),
+                      child: Text(
+                        '${s.transactionNumber} - $farmerName (${WeightFormatter.format(s.totalNetWeight)})',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     );
                   }).toList(),
                   onChanged: _onSubmissionSelected,
@@ -199,6 +204,7 @@ class _FarmerPricingScreenState extends ConsumerState<FarmerPricingScreen> {
             if (_selectedSubmission != null) ...[
               DropdownButtonFormField<SubmissionItem>(
                 value: _selectedItem,
+                isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Pilih Komoditas yang Ditetapkan Harganya',
                   prefixIcon: Icon(Icons.eco),
@@ -207,7 +213,11 @@ class _FarmerPricingScreenState extends ConsumerState<FarmerPricingScreen> {
                   final name = commMap[item.commodityId] ?? 'Komoditas';
                   return DropdownMenuItem<SubmissionItem>(
                     value: item,
-                    child: Text('$name - Bersih: ${WeightFormatter.format(item.netWeight)}'),
+                    child: Text(
+                      '$name - Bersih: ${WeightFormatter.format(item.netWeight)}',
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   );
                 }).toList(),
                 onChanged: (val) {

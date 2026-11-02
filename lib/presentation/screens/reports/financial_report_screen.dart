@@ -281,13 +281,20 @@ class _FinancialReportScreenState extends ConsumerState<FinancialReportScreen> {
 
   Widget _buildPeriodChip(String label, ReportPeriod period) {
     final isSelected = _selectedPeriod == period;
-    return ChoiceChip(
+    return FilterChip(
       label: Text(label),
       selected: isSelected,
+      showCheckmark: false,
       selectedColor: AppColors.primary,
+      backgroundColor: const Color(0xFFF1F5F9),
+      side: BorderSide(
+        color: isSelected ? AppColors.primary : const Color(0xFFCBD5E1),
+        width: 1,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       labelStyle: TextStyle(
-        color: isSelected ? Colors.white : AppColors.textPrimary,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        color: isSelected ? Colors.white : const Color(0xFF334155),
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
         fontSize: 12,
       ),
       onSelected: (_) => _applyPeriod(period),
